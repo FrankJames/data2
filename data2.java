@@ -80,17 +80,15 @@ using a red-black tree:
 
 interface RBtree {
 
-/*
-methods to add:
-member
-add
-union
-remove
-intersection
-difference
-equal
-subset
-*/
+	public boolean isEmpty();
+	public int cardinality();
+	public RBtree add( Object o);
+	public RBtree union( RBtree t );
+	public RBtree remove( Object o);
+	public RBtree intersection( RBtree t );
+	public RBtree difference( RBtree t );
+	public boolean equal( RBtree t );
+	public boolean subset( RBtree t );
 
 }
 
@@ -99,6 +97,42 @@ class Leaf implements RBtree {
 
 	Leaf() {
 		this.color = false;  // false for black, because all leaves are black
+	}
+
+	public boolean isEmpty() { 
+		return true;
+	}
+
+	public int cardinality() {
+		return 0;
+	}
+
+	public RBtree add( Object o ) {
+		return new Node(new Leaf(), o, new Leaf()); 
+	}
+
+	public RBtree union( RBtree t ) {
+		return t;
+	}
+
+	public RBtree remove( Object o ) {
+		return new Leaf();
+	}
+
+	public RBtree intersection( RBtree t ) {
+		return new Leaf();
+	}
+
+	public RBtree difference( RBtree t ) {
+		return t;
+	}
+
+	public boolean equal( RBtree t ) {
+		return false;
+	}
+
+	public boolean subset( RBtree t ) {
+		return true; 
 	}
 
 }
@@ -116,6 +150,43 @@ class Node implements RBtree {
 		this.color = false; 
 	}
 
+	public boolean isEmpty() {
+		return false;
+	}
+
+	public int cardinality() {
+		return 1 + this.left.cardinality() + this.right.cardinality();
+	}
+
+// TO DO: ALL OF THESE FUNCTIONS UTILIZING ITERABLE AND CONFORMING TO THE RULES OF A RED-BLACK TREE
+	public RBtree add( Object o) {
+
+	}
+
+	public RBtree union( RBtree t ) {
+
+	}
+
+	public RBtree remove( Object o) {
+
+	}
+
+	public RBtree intersection( RBtree t ) {
+
+	}
+
+	// difference is the set of all things in set b that are not in set a
+	public RBtree difference( RBtree t ) {
+
+	}
+
+	public boolean equal( RBtree t ) {
+
+	}
+
+	public boolean subset( RBtree t ) {
+
+	}
 }
 
 
