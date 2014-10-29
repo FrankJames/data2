@@ -41,7 +41,7 @@ using a red-black tree:
 
 	Using iterable:
 		gives forEach function
-			maps a function to each element of a set
+			maps a function to each element of a set <-- easy way to test stuff
 
 		gives splitorator()
 			splitorators: 
@@ -78,13 +78,14 @@ using a red-black tree:
 
 */
 
-interface RBtree {
+interface RBtree<Obj extends Comparable> {
 
 	public boolean isEmpty();
 	public int cardinality();
-	public RBtree add( Object o);
+	public boolean member( Obj o );
+	public RBtree add( Obj o);
 	public RBtree union( RBtree t );
-	public RBtree remove( Object o);
+	public RBtree remove( Obj o);
 	public RBtree intersection( RBtree t );
 	public RBtree difference( RBtree t );
 	public boolean equal( RBtree t );
@@ -92,7 +93,7 @@ interface RBtree {
 
 }
 
-class Leaf implements RBtree {
+class Leaf<Obj extends Comparable> implements RBtree<Obj> {
 	boolean color;
 
 	Leaf() {
@@ -107,7 +108,12 @@ class Leaf implements RBtree {
 		return 0;
 	}
 
-	public RBtree add( Object o ) {
+	public boolean member( Obj o ) {
+		return false;
+	}
+
+
+	public RBtree add( Obj o ) {
 		return new Node(new Leaf(), o, new Leaf()); 
 	}
 
@@ -115,7 +121,7 @@ class Leaf implements RBtree {
 		return t;
 	}
 
-	public RBtree remove( Object o ) {
+	public RBtree remove( Obj o ) {
 		return new Leaf();
 	}
 
@@ -137,15 +143,15 @@ class Leaf implements RBtree {
 
 }
 
-class Node implements RBtree {
+class Node<Obj extends Comparable> implements RBtree<Obj> {
 	boolean color;
-	Object o;
+	Obj object;
 	RBtree left;
 	RBtree right;
 
-	Node(RBtree left, Object o, RBtree right) {
+	Node(RBtree left, Obj object, RBtree right) {
 		this.left = new Leaf();
-		this.o = o;
+		this.object = o;
 		this.right = new Leaf();
 		this.color = false; 
 	}
@@ -158,16 +164,37 @@ class Node implements RBtree {
 		return 1 + this.left.cardinality() + this.right.cardinality();
 	}
 
-// TO DO: ALL OF THESE FUNCTIONS UTILIZING ITERABLE AND CONFORMING TO THE RULES OF A RED-BLACK TREE
-	public RBtree add( Object o) {
+	public boolean member( Obj o ) {
+		if (this.object.comparesTo( o ) == 0) {
+			return true;
+		}
 
+		else if (this.object.comparesTo ( o ) > 0) {
+			return this.right.member( o );
+		}
+
+		else {
+			return this.left.member( o );
+		}
+	}
+
+// TO DO: ALL OF THESE FUNCTIONS CONFORMING TO THE RULES OF A RED-BLACK TREE
+	public RBtree add( Obj o) {
+
+		if (this.object.comparesTo ( o ) > 0) {
+			return this.right.add( o );
+		}
+
+		else {
+			return this.left.add( o );
+		}
 	}
 
 	public RBtree union( RBtree t ) {
-
+		return this.left.union(this.right.union(t.add(this.obj)));
 	}
 
-	public RBtree remove( Object o) {
+	public RBtree remove( Obj o) {
 
 	}
 
