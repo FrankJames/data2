@@ -57,9 +57,6 @@ using a red-black tree:
 
 4. Using generics: 
 
-	How to optimize the member function such that it recognizes 
-		on which branch an object might be?
-
 	Getting syntax correct
 
 5. Multisets 
@@ -153,7 +150,7 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 		this.left = new Leaf();
 		this.object = o;
 		this.right = new Leaf();
-		this.color = false; 
+		this.color = true; 
 	}
 
 	public boolean isEmpty() {
@@ -178,7 +175,7 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 		}
 	}
 
-// TO DO: ALL OF THESE FUNCTIONS CONFORMING TO THE RULES OF A RED-BLACK TREE
+
 	public RBtree add( Obj o) {
 
 		if (this.object.comparesTo ( o ) > 0) {
@@ -189,10 +186,51 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 			return this.left.add( o );
 		}
 	}
+/*
+
+NOTES ON RB-INSERT (ROTATE)
+
+	insert always creates a new red node (with black leaf children), but then detects if rotation is necessary
+	
+	normal cases:
+
+	1. if it is the first insertion (no parent node), then it will be painted black, as the root is always black
+
+	2. if the inserted node has a parent but not a sibling, it will simply be inserted, as it is given to be red,
+			which satisfies the properties. 
+
+	wonky cases (in which there is now a grandparent):
+
+	3. if the parent and its sibling are red, we cannot simply insert a new red node as that violates a property of RB trees
+			so, we must insert and repaint the parent and uncle to be black, which then we must check if this makes the grandparent red--
+			as it would then have two black children. If the grandparent is not the root, this is expected behavior. If it is the root, 
+			then we need to feed it back into case 1, which would paint it black. This rotation must run through the tree, all the way 
+			back to the root to make sure everything is in check. 
+
+	4. if the parent is red but the uncle is black, all hell breaks loose and we have to do rotations! If the inserted node is the 
+			right child, while the parent is the left child of the grandparent, we switch the child node with the parent node (causing
+			the former-parent to become the right branch of the former-child). They're both red, which breaks one of the properties of
+			RB-trees. We feed it into the 5th case put this back in order
+
+	5. if the parent is red but the uncle is black, we're still doing rotations! Now, if our node is the left child of the parent and 
+			the parent is the left child of the grandparent, then we rotate such that the parent becomes the parent of the child (left branch),
+			and the grandfather (right branch). We also switch the colors of the parent and the grandparent. 
+
+*/
+
 
 	public RBtree union( RBtree t ) {
 		return this.left.union(this.right.union(t.add(this.obj)));
 	}
+
+/*
+
+NOTES ON RB-REMOVE
+
+
+
+
+*/
 
 	public RBtree remove( Obj o) {
 
