@@ -54,20 +54,7 @@ using a red-black tree:
 				
 				Apparently, these work most efficiently with approximately balanced trees, as RB-trees are
 
-
-4. Using generics: 
-
-	Getting syntax correct
-
-5. Multisets 
-
-	can contain more than one of the same element
-
-	How will this affect remove / intersection / difference?
-		We must check 
-
-
-6. Testing
+5. Testing
 
 	TESTING PROPERTIES
 	GET SET PROPERTIES
@@ -77,12 +64,19 @@ using a red-black tree:
 
 interface RBtree<Obj extends Comparable> {
 
+	public int getCount( Obj o );
 	public boolean isEmpty();
 	public int cardinality();
 	public boolean member( Obj o );
-	public RBtree add( Obj o);
+	public RBtree add( Obj o );
+	// public RBtree addN( Obj o, int num );
+	public RBtree blacken();
+	public boolean isRed(); 
+	public RBtree balance(); 
 	public RBtree union( RBtree t );
 	public RBtree remove( Obj o);
+	public RBtree removeN( Obj o, int num );
+	public RBtree removeALL( Obj o ); 
 	public RBtree intersection( RBtree t );
 	public RBtree difference( RBtree t );
 	public boolean equal( RBtree t );
@@ -97,6 +91,10 @@ class Leaf<Obj extends Comparable> implements RBtree<Obj> {
 		this.color = false;  // false for black, because all leaves are black
 	}
 
+	public int getCount( Obj o ) {
+		return 0;
+	}
+
 	public boolean isEmpty() { 
 		return true;
 	}
@@ -109,9 +107,24 @@ class Leaf<Obj extends Comparable> implements RBtree<Obj> {
 		return false;
 	}
 
-
 	public RBtree add( Obj o ) {
 		return new Node(new Leaf(), o, new Leaf()); 
+	}
+
+	public RBtree addN( Obj o, int num ) {
+		return new Node(new Leaf(), o, num, new Leaf());
+	}
+
+	public RBtree blacken( ) {
+		return new Leaf(); 
+	}
+
+	public boolean isRed( ) {
+		return this.color;
+	}
+
+	public RBtree balance( ) {
+		return new Leaf(); 
 	}
 
 	public RBtree union( RBtree t ) {
@@ -119,6 +132,14 @@ class Leaf<Obj extends Comparable> implements RBtree<Obj> {
 	}
 
 	public RBtree remove( Obj o ) {
+		return new Leaf();
+	}
+
+	public RBtree removeN( Obj o, int num ) {
+		return new Leaf();
+	}
+
+	public RBtree removeALL( Obj o ) {
 		return new Leaf();
 	}
 
@@ -143,30 +164,76 @@ class Leaf<Obj extends Comparable> implements RBtree<Obj> {
 class Node<Obj extends Comparable> implements RBtree<Obj> {
 	boolean color;
 	Obj object;
-	RBtree left;
-	RBtree right;
+	RBtree<Obj> left;
+	RBtree<Obj> right;
+	int count;
+
+	Node(RBtree left, Obj object, int count, RBtree right, boolean color) {
+		this.left = new Leaf();
+		this.object = object;
+		this.right = new Leaf();
+		this.color = color; 
+		this.count = count;
+	}	
+
+	Node(RBtree left, Obj object, int count, RBtree right) {
+		this.left = new Leaf();
+		this.object = object;
+		this.right = new Leaf();
+		this.color = true; 
+		this.count = count;
+	}
 
 	Node(RBtree left, Obj object, RBtree right) {
 		this.left = new Leaf();
-		this.object = o;
+		this.object = object;
 		this.right = new Leaf();
 		this.color = true; 
+		this.count = 1;
+	}
+
+	// shorthand constructor
+	Node(Obj object, int count) {
+		this.left = new Leaf();
+		this.object = object;
+		this.right = new Leaf();
+		this.color = true; 
+		this.count = count;
+	}
+
+	public int getCount( Obj o ) {
+		if (this.object.compareTo( o ) == 0) {
+			return count;
+		}
+
+		else if (o.compareTo(this.object) > 0) {
+			return this.right.getCount( o ); 
+		}
+
+		else {
+			return this.left.getCount( o ); 
+		}
 	}
 
 	public boolean isEmpty() {
-		return false;
+		if (this.count == 0) {
+		return true;
+	}
+		else {
+			return false;
+		}
 	}
 
 	public int cardinality() {
-		return 1 + this.left.cardinality() + this.right.cardinality();
+		return this.count + this.left.cardinality() + this.right.cardinality();
 	}
 
 	public boolean member( Obj o ) {
-		if (this.object.comparesTo( o ) == 0) {
-			return true;
+		if (this.object.compareTo( o ) == 0) {
+			return this.count != 0;
 		}
 
-		else if (this.object.comparesTo ( o ) > 0) {
+		else if (this.object.compareTo ( o ) > 0) {
 			return this.right.member( o );
 		}
 
@@ -178,7 +245,7 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 
 	public RBtree add( Obj o) {
 
-		if (this.object.comparesTo ( o ) > 0) {
+		if (this.object.compareTo ( o ) > 0) {
 			return this.right.add( o );
 		}
 
@@ -218,39 +285,93 @@ NOTES ON RB-INSERT (ROTATE)
 
 */
 
-
-	public RBtree union( RBtree t ) {
-		return this.left.union(this.right.union(t.add(this.obj)));
+	public RBtree blacken() {
+		return new Node(this.left, this.object, this.count, this.right, false);
 	}
 
-/*
+	public boolean isRed() {
+		return this.color;
+	}
 
-NOTES ON RB-REMOVE
+	public RBtree balance() {
+		/*
+		if ((this.isRed() == false) && this.left.isRed() && this.left.left.isRed()) {
+
+		}
+		*/
+		return this;
+	}
 
 
-
-
-*/
+	public RBtree union( RBtree t ) {
+		return this.left.union(this.right.union(t.add(this.object)));
+	}
 
 	public RBtree remove( Obj o) {
+		return this.removeN( o, 1 );
+	}
 
+	public RBtree removeN( Obj o, int num) {
+		if (this.object.compareTo( o ) == 0) {
+			if (num > this.count) {
+				return new Node(this.left, this.object, 0, this.right);
+			}
+			else {
+				return new Node(this.left, this.object, this.count - num, this.right); 
+			}
+		}
+		else if (this.object.compareTo( o ) > 0) {
+			return new Node(this.left, this.object, this.count, this.right.removeN( o, num ));
+		}
+		else {
+			return new Node(this.left.removeN( o, num ), this.object, this.count, this.right);
+		}
+	}
+
+	public RBtree removeALL( Obj o ) {
+		if (this.object.compareTo( o ) == 0) {
+			return this.right.union(this.left);
+		}
+		else if (this.object.compareTo( o ) > 0) {
+			return new Node(this.left, this.object, this.count, this.right.removeALL( o ));
+		}
+		else {
+			return new Node(this.left.removeALL( o ), this.object, this.count, this.right);
+		}
 	}
 
 	public RBtree intersection( RBtree t ) {
-
+		if (t.member( this.object ) ) {
+			if (t.getCount( this.object ) > this.count ) {
+				return new Node(this.left.intersection( t ), this.object, t.getCount( this.object ), this.right.intersection( t ));
+			}
+			else {
+				return new Node(this.left.intersection( t ), this.object, this.count, this.right.intersection( t ));
+			}
+		}
+		else {
+			return this.right.intersection( t ).union(this.left.intersection( t ));	
+		}
 	}
 
-	// difference is the set of all things in set b that are not in set a
+
 	public RBtree difference( RBtree t ) {
-
-	}
-
-	public boolean equal( RBtree t ) {
-
+		RBtree temp = t.removeN( this.object, this.count );
+		return this.right.union( this.left ).difference( temp );
 	}
 
 	public boolean subset( RBtree t ) {
+		return (t.getCount( this.object ) >= this.getCount( this.object ))
+			&& this.right.union(this.left).subset( t ); 
+	}
 
+	public boolean equal( RBtree t ) {
+		if (this.subset( t ) && t.subset( this )) {
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 }
 
