@@ -26,6 +26,36 @@ using a red-black tree:
 
 		All paths to any child leaves must contain the same amount of black nodes
 
+/*
+
+NOTES ON RB-INSERT (ROTATE)
+
+	insert always creates a new red node (with black leaf children), but then detects if rotation is necessary
+	
+	normal cases:
+
+	1. if it is the first insertion (no parent node), then it will be painted black, as the root is always black
+
+	2. if the inserted node has a parent but not a sibling, it will simply be inserted, as it is given to be red,
+			which satisfies the properties. 
+
+	wonky cases (in which there is now a grandparent):
+
+	3. if the parent and its sibling are red, we cannot simply insert a new red node as that violates a property of RB trees
+			so, we must insert and repaint the parent and uncle to be black, which then we must check if this makes the grandparent red--
+			as it would then have two black children. If the grandparent is not the root, this is expected behavior. If it is the root, 
+			then we need to feed it back into case 1, which would paint it black. This rotation must run through the tree, all the way 
+			back to the root to make sure everything is in check. 
+
+	4. if the parent is red but the uncle is black, all hell breaks loose and we have to do rotations! If the inserted node is the 
+			right child, while the parent is the left child of the grandparent, we switch the child node with the parent node (causing
+			the former-parent to become the right branch of the former-child). They're both red, which breaks one of the properties of
+			RB-trees. We feed it into the 5th case put this back in order
+
+	5. if the parent is red but the uncle is black, we're still doing rotations! Now, if our node is the left child of the parent and 
+			the parent is the left child of the grandparent, then we rotate such that the parent becomes the parent of the child (left branch),
+			and the grandfather (right branch). We also switch the colors of the parent and the grandparent. 
+
 
 2. Needs to be constructed such that these rules apply:
 
@@ -218,7 +248,7 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 	public boolean isEmpty() {
 		if (this.count == 0) {
 		return true;
-	}
+		}
 		else {
 			return false;
 		}
@@ -253,37 +283,6 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 			return this.left.add( o );
 		}
 	}
-/*
-
-NOTES ON RB-INSERT (ROTATE)
-
-	insert always creates a new red node (with black leaf children), but then detects if rotation is necessary
-	
-	normal cases:
-
-	1. if it is the first insertion (no parent node), then it will be painted black, as the root is always black
-
-	2. if the inserted node has a parent but not a sibling, it will simply be inserted, as it is given to be red,
-			which satisfies the properties. 
-
-	wonky cases (in which there is now a grandparent):
-
-	3. if the parent and its sibling are red, we cannot simply insert a new red node as that violates a property of RB trees
-			so, we must insert and repaint the parent and uncle to be black, which then we must check if this makes the grandparent red--
-			as it would then have two black children. If the grandparent is not the root, this is expected behavior. If it is the root, 
-			then we need to feed it back into case 1, which would paint it black. This rotation must run through the tree, all the way 
-			back to the root to make sure everything is in check. 
-
-	4. if the parent is red but the uncle is black, all hell breaks loose and we have to do rotations! If the inserted node is the 
-			right child, while the parent is the left child of the grandparent, we switch the child node with the parent node (causing
-			the former-parent to become the right branch of the former-child). They're both red, which breaks one of the properties of
-			RB-trees. We feed it into the 5th case put this back in order
-
-	5. if the parent is red but the uncle is black, we're still doing rotations! Now, if our node is the left child of the parent and 
-			the parent is the left child of the grandparent, then we rotate such that the parent becomes the parent of the child (left branch),
-			and the grandfather (right branch). We also switch the colors of the parent and the grandparent. 
-
-*/
 
 	public RBtree blacken() {
 		return new Node(this.left, this.object, this.count, this.right, false);
@@ -293,13 +292,60 @@ NOTES ON RB-INSERT (ROTATE)
 		return this.color;
 	}
 
+// picture: https://lh5.googleusercontent.com/-vFblLq5ooAc/VFgPtnU-tSI/AAAAAAAAAI4/E09IMdDCFz0/s1600/20141103_165446.jpg
 	public RBtree balance() {
-		/*
-		if ((this.isRed() == false) && this.left.isRed() && this.left.left.isRed()) {
 
+
+			// CASE 1:
+		if ((this.left instanceof Node) && (this.isRed() == false) && ((Node) this.left).isRed() && ((Node) this.left).left.isRed()) {
+
+				Node b = (Node) this.left;
+				Node c = (Node) b.left;
+
+				return new Node( new Node( c.left, c.object, c.count, c.right, false ),
+									b.object, 
+									b.count,
+								 new Node( b.right, this.object, this.count, this.right, false),
+							 		true);
 		}
-		*/
-		return this;
+			// CASE 2:
+		else if ((this.left instanceof Node) && (this.isRed() == false) && ((Node) this.left).isRed() && ((Node) this.left).right.isRed()) {
+
+				Node b = (Node) this.left;
+				Node c = (Node) b.right;
+
+				return new Node( new Node( b.left, b.object, b.count, c.left, false ), 
+									c.object,
+									c.count,
+								 new Node( c.right, this.object, this.count, this.right, false ),
+								 	true);
+			}
+
+			// CASE 3:
+		else if	((this.right instanceof Node) && (this.isRed() == false) && ((Node) this.right).isRed() && ((Node) this.right).left.isRed()) {
+
+				Node b = (Node) this.right;
+				Node c = (Node) b.left;
+
+				return new Node( new Node( this.left, this.object, this.count, c.left, false ),
+									c.object,
+									c.count,
+								  new Node( c.right, b.object, b.count, b.right, false ),
+								  	true);
+			}
+
+			// CASE 4:
+		else if ((this.right instanceof Node) && (this.isRed() == false) && ((Node) this.right).isRed() && ((Node) this.right).right.isRed()) {
+
+				Node b = (Node) this.right;
+				Node c = (Node) b.right;
+
+				return new Node( new Node( this.left, this.object, this.count, b.left, false ),
+									b.object,
+									b.count,
+								  new Node( c.left, c.object, c.count, c.right, false ),
+								  	true);
+		}
 	}
 
 
@@ -353,7 +399,6 @@ NOTES ON RB-INSERT (ROTATE)
 			return this.right.intersection( t ).union(this.left.intersection( t ));	
 		}
 	}
-
 
 	public RBtree difference( RBtree t ) {
 		RBtree temp = t.removeN( this.object, this.count );
