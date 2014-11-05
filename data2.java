@@ -4,6 +4,7 @@ data2 assignment
 October - November 2014
 */
 
+import java.util.*;
 
 /*
 
@@ -39,24 +40,6 @@ NOTES ON RB-INSERT (ROTATE)
 	2. if the inserted node has a parent but not a sibling, it will simply be inserted, as it is given to be red,
 			which satisfies the properties. 
 
-	wonky cases (in which there is now a grandparent):
-
-	3. if the parent and its sibling are red, we cannot simply insert a new red node as that violates a property of RB trees
-			so, we must insert and repaint the parent and uncle to be black, which then we must check if this makes the grandparent red--
-			as it would then have two black children. If the grandparent is not the root, this is expected behavior. If it is the root, 
-			then we need to feed it back into case 1, which would paint it black. This rotation must run through the tree, all the way 
-			back to the root to make sure everything is in check. 
-
-	4. if the parent is red but the uncle is black, all hell breaks loose and we have to do rotations! If the inserted node is the 
-			right child, while the parent is the left child of the grandparent, we switch the child node with the parent node (causing
-			the former-parent to become the right branch of the former-child). They're both red, which breaks one of the properties of
-			RB-trees. We feed it into the 5th case put this back in order
-
-	5. if the parent is red but the uncle is black, we're still doing rotations! Now, if our node is the left child of the parent and 
-			the parent is the left child of the grandparent, then we rotate such that the parent becomes the parent of the child (left branch),
-			and the grandfather (right branch). We also switch the colors of the parent and the grandparent. 
-
-
 2. Needs to be constructed such that these rules apply:
 
 	retroactively change the colors of trees, because whenever a node is created
@@ -65,24 +48,6 @@ NOTES ON RB-INSERT (ROTATE)
 
 	Thus we need to be able to detect if there are two filled braches (if both are Trees),
 		and then change the color of the parent tree accordingly. 
-
-
-3. Iteration abstraction:
-
-	Using iterable:
-		gives forEach function
-			maps a function to each element of a set <-- easy way to test stuff
-
-		gives splitorator()
-			splitorators: 
-				can iterate in parallel, like through trees whereas an iterator could go through a list
-				trySplit() <-- creates another splitorator in partitioning elements to traverse branches
-
-				forEachRemaining(Object o, method) <-- probably important for member / other methods
-
-				How to get this to work correctly with binary trees?
-				
-				Apparently, these work most efficiently with approximately balanced trees, as RB-trees are
 
 5. Testing
 
@@ -111,6 +76,111 @@ interface RBtree<Obj extends Comparable> {
 	public RBtree difference( RBtree t );
 	public boolean equal( RBtree t );
 	public boolean subset( RBtree t );
+
+}
+
+interface Sequence<Obj> {
+	public Obj getMine();
+	public boolean hasMine();
+	public Sequence<Obj> getNext();
+	public String toString();
+}
+
+interface Sequenced<Obj extends Comparable> {
+	public Sequence<Obj> seq();
+}
+
+class SequenceLeaf<Obj extends Comparable> implements Sequence<Obj> {
+
+	public boolean hasMine() {
+		return false;
+	}
+
+	public Obj getMine() {
+		return null; 
+	}
+
+	public SequenceLeaf<Obj> getNext() {
+		return this;
+	}
+
+	public String toString() {
+		return "";
+	}
+}
+
+class SequenceNode<Obj extends Comparable> implements Sequence<Obj>, Sequenced<Obj> {
+
+	Obj mine;
+	int count;
+	Sequence<Obj> next;
+
+	SequenceNode(Obj mine, int count, Sequence<Obj> next) {
+		this.mine = mine;
+		this.count = count;
+		this.next = next;
+	}
+
+	public Sequence<Obj> seq() {
+		return this;
+	}
+
+	public boolean hasMine() {
+		return true;
+	}
+
+	public Obj getMine() {
+		return this.mine;
+	}
+
+	public Sequence<Obj> getNext() {
+		if ( count > 1 ) {
+			return new SequenceNode(mine, count - 1, next);
+		}
+		else {
+			return next;
+		}
+	}
+
+	public String toString() {
+		return "" + this.getMine();
+	}
+}
+
+class SequenceConcat<Obj extends Comparable> implements Sequence<Obj> {
+	Sequence<Obj> left;
+	Sequence<Obj> right;
+
+	SequenceConcat(Sequence<Obj> left, Sequence<Obj> right) {
+		this.left = left;
+		this.right = right;
+	}
+
+	public Obj getMine() {
+		if ( this.left.hasMine() ) {
+			return this.left.mine();
+		} 
+		else {
+			return this.right.mine();
+		}
+	}
+
+	public boolean hasMine() {
+		return this.left.hasMine() || this.right.hasMine(); 
+	}
+
+	public Sequence<Obj> getNext() {
+		if ( this.left.hasMine() ) {
+			return this.left.getNext();
+		}
+		else {
+			return this.right.getNext();
+		}
+	}
+
+	public String toString {
+		return "" + this.left.toString() + " " + this.right.toString();
+	}
 
 }
 
@@ -292,9 +362,8 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 		return this.color;
 	}
 
-// picture: https://lh5.googleusercontent.com/-vFblLq5ooAc/VFgPtnU-tSI/AAAAAAAAAI4/E09IMdDCFz0/s1600/20141103_165446.jpg
-	public RBtree balance() {
 
+	public RBtree balance() {
 
 			// CASE 1:
 		if ((this.left instanceof Node) && (this.isRed() == false) && ((Node) this.left).isRed() && ((Node) this.left).left.isRed()) {
@@ -346,6 +415,7 @@ class Node<Obj extends Comparable> implements RBtree<Obj> {
 								  new Node( c.left, c.object, c.count, c.right, false ),
 								  	true);
 		}
+		return this;
 	}
 
 
